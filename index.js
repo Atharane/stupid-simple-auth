@@ -1,9 +1,10 @@
 const express = require("express")
 const cors = require("cors")
-const _ = require("lodash")
+const bcrypt = require("bcrypt")
 const bodyParser = require("body-parser")
 const mongoose = require("mongoose")
 const sessions = require("client-sessions")
+const _ = require("lodash")
 
 require("dotenv").config()
 
@@ -21,6 +22,21 @@ app.use(
     duration: 30 * 60 * 1000,
   })
 )
+
+app.use((req, res, next) => {
+  if (!req.session?.userId) {
+    return next()
+  }
+
+  User.findById(req.session.userId)
+    .then(user => {
+      user.password = undefined
+      req.user = user
+      res.locals.user = user
+    })
+    .catch(err => console.log(err))
+    .finally(() => next())
+})
 
 // ------ DATABASE CONNECTION ------
 const connection_url = "mongodb://0.0.0.0:27017/playground"
@@ -46,7 +62,7 @@ const userSchema = new mongoose.Schema({
   },
 })
 
-const User = mongoose.model("User", userSchema)
+const User = mongoose.model("stupid_user", userSchema)
 
 // ------ GET ENDPOINTS ------
 
@@ -68,13 +84,6 @@ app.get("/dashboard", async (req, res) => {
   const user = await User.findById(req.session.userId)
   if (!user) return res.redirect("/login")
 
-  //! VULNERABLE CODE AHEAD
-  const { amount, receiver } = req.query
-  
-  if (amount) {
-    return res.send(`💰 ${user.username} sent ${amount} to ${receiver}`)
-  }
-
   res.sendFile(`${__dirname}/views/dashboard.html`)
 })
 
@@ -87,16 +96,18 @@ app.post("/login", async (req, res) => {
     return res.status(400).send("Invalid credentials")
   }
 
-  if (req.body.password !== user.password) {
-    return res.send("🚫 Access denied")
-  } else {
-    req.session.userId = user._id
-    res.redirect("/dashboard")
-  }
+  const isValidUser = await bcrypt.compare(req.body.password, user.password)
+
+  if (!isValidUser) return res.send("🚫 Access denied")
+  req.session.userId = user._id
+  res.redirect("/dashboard")
 })
 
 app.post("/register", async (req, res) => {
   const user = new User(_.pick(req.body, ["username", "email", "password"]))
+
+  const salt = await bcrypt.genSalt(10)
+  user.password = await bcrypt.hash(user.password, salt)
 
   user
     .save()
