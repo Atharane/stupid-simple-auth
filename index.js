@@ -12,7 +12,7 @@ const app = express()
 
 // ------ MIDDLEWARE ------
 app.use(express.json())
-app.use(cors({ origin: "https://www.section.io" }))
+app.use(cors({ origin: "*" }))
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static("views")) // serve static files from the "views" directory
 app.use(
@@ -20,9 +20,14 @@ app.use(
     cookieName: "session",
     secret: process.env.SESSION_SECRET,
     duration: 30 * 60 * 1000,
+    activeDuration: 5 * 60 * 1000,
+    httpOnly: true, // don't let JS code access cookies
+    // secure: true, // only set cookies over https
+    ephemeral: true, // destroy cookies when the browser closes
   })
 )
 
+// set req.user if user is logged in
 app.use((req, res, next) => {
   if (!req.session?.userId) {
     return next()
@@ -37,6 +42,11 @@ app.use((req, res, next) => {
     .catch(err => console.log(err))
     .finally(() => next())
 })
+
+const requireLogin = (req, res, next) => {
+  if (!req.user) return res.redirect("/login")
+  next()
+}
 
 // ------ DATABASE CONNECTION ------
 const connection_url = "mongodb://0.0.0.0:27017/playground"
@@ -78,9 +88,7 @@ app.get("/register", (req, res) => {
   res.sendFile(`${__dirname}/views/register.html`)
 })
 
-app.get("/dashboard", async (req, res) => {
-  if (!req.session?.userId) return res.redirect("/login")
-
+app.get("/dashboard", requireLogin, async (req, res) => {
   const user = await User.findById(req.session.userId)
   if (!user) return res.redirect("/login")
 
@@ -92,9 +100,7 @@ app.get("/dashboard", async (req, res) => {
 app.post("/login", async (req, res) => {
   const user = await User.findOne({ email: req.body.email })
 
-  if (!user) {
-    return res.status(400).send("Invalid credentials")
-  }
+  if (!user) return res.status(400).send("Invalid credentials")
 
   const isValidUser = await bcrypt.compare(req.body.password, user.password)
 
@@ -115,6 +121,13 @@ app.post("/register", async (req, res) => {
       res.redirect("/dashboard")
     })
     .catch(err => res.status(500).send(err))
+})
+
+app.post("/dashboard", async (req, res) => {
+  const user = await User.findById(req.session.userId)
+  if (!user) return res.redirect("/login")
+
+  res.send(`🎉 Logged in as ${user.username}`)
 })
 
 // ------ SERVER ------

